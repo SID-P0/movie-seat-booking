@@ -64,6 +64,12 @@ public class AuthTokenFilter implements Filter {
         String path = httpReq.getRequestURI();
         String method = httpReq.getMethod();
 
+        // Allow CORS preflight requests through — browser sends OPTIONS before every cross-origin request
+        if (method.equals("OPTIONS")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // Public endpoints — no auth needed
         if (PUBLIC_PATHS.stream().anyMatch(path::startsWith) || 
            (method.equals("GET") && (path.equals("/shows") || path.matches("^/shows/[a-f0-9\\-]+$") || path.matches("^/shows/[a-f0-9\\-]+/stream$") || path.startsWith("/sse"))) ||
