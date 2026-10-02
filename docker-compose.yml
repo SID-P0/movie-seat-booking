@@ -180,6 +180,12 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token <YOUR_CLOUDFLARE_TUNNEL_TOKEN>
+    depends_on:
+      - haproxy
+
 volumes:
   pgdata:
   grafana_data:
