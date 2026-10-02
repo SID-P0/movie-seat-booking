@@ -4,15 +4,19 @@ A highly concurrent, linearly scalable seat booking API designed to prevent race
 
 ---
 
+![alt text](image.png)
+
 ## 1. Local Setup & Execution
 
 The entire stack (APIs, PostgreSQL, Redis, Kafka, Consumer, HAProxy, Prometheus, Grafana, Dozzle) can be spun up with a single command. The infrastructure strictly manages startup ordering so there are no race conditions during initialization.
 
 **Prerequisites:**
+
 - Java 21 & Gradle 8.14.3
 - Docker & Docker Compose
 
 **Step-by-Step Setup:**
+
 ```bash
 # 1. Build the Java JARs
 ./gradlew clean build -x test
@@ -22,6 +26,7 @@ docker compose up -d --build
 ```
 
 **What happens on `docker compose up`?**
+
 1. **Infrastructure Boots**: Postgres, Redis, and Kafka start up.
 2. **Init Scripts Run**: `init-db` runs Flyway SQL migrations. `init-kafka` creates the exactly required `reservations` and `seat-expirations` topics.
 3. **Services Boot**: The Spring Boot `api` nodes and `consumer` wait until init scripts succeed, then they start.
@@ -33,15 +38,16 @@ docker compose up -d --build
 
 Once the stack is healthy, you can access the following services:
 
-| Service | URL | Credentials (if any) |
-|---------|-----|----------------------|
-| **API Entrypoint (HAProxy)** | `http://localhost:8080` | N/A |
-| **Dozzle (Real-time Logs)** | [http://localhost:8081](http://localhost:8081) | N/A |
-| **Grafana Dashboard** | [http://localhost:3000](http://localhost:3000/d/seat-booking-burst/seat-booking-burst-dashboard) | `admin` / `admin` |
-| **Prometheus Metrics** | [http://localhost:9090](http://localhost:9090) | N/A |
-| **HAProxy Stats** | `http://localhost:8404/stats` | N/A |
+| Service                      | URL                                                                                              | Credentials (if any) |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ | -------------------- |
+| **API Entrypoint (HAProxy)** | `http://localhost:8080`                                                                          | N/A                  |
+| **Dozzle (Real-time Logs)**  | [http://localhost:8081](http://localhost:8081)                                                   | N/A                  |
+| **Grafana Dashboard**        | [http://localhost:3000](http://localhost:3000/d/seat-booking-burst/seat-booking-burst-dashboard) | `admin` / `admin`    |
+| **Prometheus Metrics**       | [http://localhost:9090](http://localhost:9090)                                                   | N/A                  |
+| **HAProxy Stats**            | `http://localhost:8404/stats`                                                                    | N/A                  |
 
-*Note: You can easily scale the API to handle more load. HAProxy will auto-discover the new nodes:*
+_Note: You can easily scale the API to handle more load. HAProxy will auto-discover the new nodes:_
+
 ```bash
 docker compose up -d --scale api=5
 ```
@@ -56,7 +62,8 @@ To simulate an on-sale stampede (e.g. 20,000 requests hitting the API concurrent
 chmod +x burst.sh
 ./burst.sh http://localhost:8080
 ```
-*Open the **Grafana Dashboard** and **Dozzle Logs** while running this script to watch the system elegantly handle the massive concurrency, instantly reject conflicts via Redis Lua, and process Kafka events without a single double-sell!*
+
+_Open the **Grafana Dashboard** and **Dozzle Logs** while running this script to watch the system elegantly handle the massive concurrency, instantly reject conflicts via Redis Lua, and process Kafka events without a single double-sell!_
 
 ---
 
@@ -65,12 +72,15 @@ chmod +x burst.sh
 All API requests should be sent to the HAProxy load balancer at `http://localhost:8080`.
 
 ### A. Health & Liveness
+
 ```bash
 curl http://localhost:8080/health/live
 ```
 
 ### B. Register a User
+
 Create a user to get an authentication token.
+
 ```bash
 curl -X POST http://localhost:8080/users/register \
   -H "Content-Type: application/json" \
@@ -78,10 +88,13 @@ curl -X POST http://localhost:8080/users/register \
     "email": "user@example.com"
   }'
 ```
-*Returns `userId` and `token`. Keep the token!*
+
+_Returns `userId` and `token`. Keep the token!_
 
 ### C. Create a Show (Admin Only)
-*Requires the Admin Token.*
+
+_Requires the Admin Token._
+
 ```bash
 curl -X POST http://localhost:8080/shows \
   -H "Content-Type: application/json" \
@@ -92,16 +105,21 @@ curl -X POST http://localhost:8080/shows \
     "price": 25000
   }'
 ```
-*Returns the created show with a `showId` and the generated seat map.*
+
+_Returns the created show with a `showId` and the generated seat map._
 
 ### D. Get Show State (Seat Map)
+
 ```bash
 curl http://localhost:8080/shows/<SHOW_ID>
 ```
-*Returns per-seat status (available / held / confirmed) and active counts.*
+
+_Returns per-seat status (available / held / confirmed) and active counts._
 
 ### E. Reserve Seats
+
 Reserve seats atomically. The identity comes purely from the provided authentication token.
+
 ```bash
 curl -X POST http://localhost:8080/shows/<SHOW_ID>/reserve \
   -H "Content-Type: application/json" \
@@ -111,19 +129,25 @@ curl -X POST http://localhost:8080/shows/<SHOW_ID>/reserve \
     "idempotencyKey": "<UNIQUE_UUID>"
   }'
 ```
-*Behavior guarantees: No double-sell (409 on conflict), 15-second TTL enforced by Redis, and perfectly idempotent.*
+
+_Behavior guarantees: No double-sell (409 on conflict), 15-second TTL enforced by Redis, and perfectly idempotent._
 
 ### F. Confirm Reservation
+
 Confirm a held reservation (must be the owner).
+
 ```bash
 curl -X POST http://localhost:8080/reservations/<RESERVATION_ID>/confirm \
   -H "Authorization: Bearer <USER_TOKEN>"
 ```
 
 ### G. Cancel / Release Reservation
+
 Cancel a reservation (must be the owner).
+
 ```bash
 curl -X POST http://localhost:8080/reservations/<RESERVATION_ID>/cancel \
   -H "Authorization: Bearer <USER_TOKEN>"
 ```
-*A released seat instantly becomes cleanly re-bookable by anyone else.*
+
+_A released seat instantly becomes cleanly re-bookable by anyone else._
