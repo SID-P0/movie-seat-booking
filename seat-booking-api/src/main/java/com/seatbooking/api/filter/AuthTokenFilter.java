@@ -64,11 +64,19 @@ public class AuthTokenFilter implements Filter {
         String path = httpReq.getRequestURI();
         String method = httpReq.getMethod();
 
-        // Allow CORS preflight requests through — browser sends OPTIONS before every cross-origin request
+        // Handle CORS preflight — respond immediately with required headers
         if (method.equals("OPTIONS")) {
-            chain.doFilter(request, response);
+            httpResp.setHeader("Access-Control-Allow-Origin", "*");
+            httpResp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            httpResp.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+            httpResp.setStatus(HttpServletResponse.SC_OK);
             return;
         }
+
+        // Add CORS headers to every response
+        httpResp.setHeader("Access-Control-Allow-Origin", "*");
+        httpResp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        httpResp.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
 
         // Public endpoints — no auth needed
         if (PUBLIC_PATHS.stream().anyMatch(path::startsWith) || 
