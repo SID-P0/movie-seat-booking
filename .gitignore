@@ -20,3 +20,4 @@ Thumbs.db
 # Docker volumes
 pgdata/
 grafana_data/
+movie-seat-booking-ui/
