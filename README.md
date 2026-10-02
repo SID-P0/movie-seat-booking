@@ -15,13 +15,20 @@ The entire stack (APIs, PostgreSQL, Redis, Kafka, Consumer, HAProxy, Prometheus,
 - Java 21 & Gradle 8.14.3
 - Docker & Docker Compose
 
+- sudo apt-get update
+- sudo apt-get install -y openjdk-21-jdk
+
 **Step-by-Step Setup:**
 
 ```bash
-# 1. Build the Java JARs
+# 1. Chmod
+chmod +x gradlew
+chmod +x burst.sh
+
+# 2. Build the Java JARs
 ./gradlew clean build -x test
 
-# 2. Boot the infrastructure & services
+# 3. Boot the infrastructure & services
 docker compose up -d --build
 ```
 
@@ -38,13 +45,15 @@ docker compose up -d --build
 
 Once the stack is healthy, you can access the following services:
 
-| Service                      | URL                                                                                              | Credentials (if any) |
-| ---------------------------- | ------------------------------------------------------------------------------------------------ | -------------------- |
-| **API Entrypoint (HAProxy)** | `http://localhost:8080`                                                                          | N/A                  |
-| **Dozzle (Real-time Logs)**  | [http://localhost:8081](http://localhost:8081)                                                   | N/A                  |
-| **Grafana Dashboard**        | [http://localhost:3000](http://localhost:3000/d/seat-booking-burst/seat-booking-burst-dashboard) | `admin` / `admin`    |
-| **Prometheus Metrics**       | [http://localhost:9090](http://localhost:9090)                                                   | N/A                  |
-| **HAProxy Stats**            | `http://localhost:8404/stats`                                                                    | N/A                  |
+| Service                      | URL                                                                                                              | Credentials (if any) |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------- |
+| **UI (Nginx)**               | [http://34.14.203.181](http://34.14.203.181)                                                                     | N/A                  |
+| **API Entrypoint (HAProxy)** | [http://34.14.203.181:8080](http://34.14.203.181:8080)                                                           | N/A                  |
+| **Swagger UI**               | [http://34.14.203.181:8080/swagger-ui/index.html](http://34.14.203.181:8080/swagger-ui/index.html)               | N/A                  |
+| **Dozzle (Real-time Logs)**  | [http://34.14.203.181:8081](http://34.14.203.181:8081)                                                           | N/A                  |
+| **Grafana Dashboard**        | [http://34.14.203.181:3000](http://34.14.203.181:3000/d/seat-booking-burst/seat-booking-burst-dashboard)         | `admin` / `admin`    |
+| **Prometheus Metrics**       | [http://34.14.203.181:9090](http://34.14.203.181:9090)                                                           | N/A                  |
+| **HAProxy Stats**            | [http://34.14.203.181:8404/stats](http://34.14.203.181:8404/stats)                                               | N/A                  |
 
 _Note: You can easily scale the API to handle more load. HAProxy will auto-discover the new nodes:_
 
