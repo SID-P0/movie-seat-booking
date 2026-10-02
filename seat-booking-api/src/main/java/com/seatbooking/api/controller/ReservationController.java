@@ -10,6 +10,10 @@ import com.seatbooking.common.entity.UserEntity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,9 +29,14 @@ public class ReservationController {
 
     /**
      * POST /shows/{id}/reserve — Reserve seats (authenticated user)
-     *
-     * Identity comes from the auth token, NOT from the request body.
      */
+    @Operation(summary = "Reserve Seats", description = "Atomically reserve seats for a show. Identity is derived purely from the Bearer token.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Successfully reserved seats"),
+            @ApiResponse(responseCode = "400", description = "Invalid request payload"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Missing or invalid token"),
+            @ApiResponse(responseCode = "409", description = "Conflict - Seats already taken or limit exceeded")
+    })
     @PostMapping("/shows/{id}/reserve")
     public ResponseEntity<ReservationResponse> reserveSeats(
             @PathVariable("id") UUID showId,
@@ -43,6 +52,14 @@ public class ReservationController {
     /**
      * POST /reservations/{id}/cancel — Cancel a reservation (owner only)
      */
+    @Operation(summary = "Cancel Reservation", description = "Cancel a reservation you own. Does not require a body.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully cancelled"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Not your reservation"),
+            @ApiResponse(responseCode = "404", description = "Reservation not found"),
+            @ApiResponse(responseCode = "409", description = "Conflict - Already cancelled")
+    })
     @PostMapping("/reservations/{id}/cancel")
     public ResponseEntity<ReservationResponse> cancelReservation(
             @PathVariable("id") UUID reservationId,
@@ -57,6 +74,14 @@ public class ReservationController {
     /**
      * POST /reservations/{id}/confirm — Confirm a held reservation (place order)
      */
+    @Operation(summary = "Confirm Reservation", description = "Confirm a held reservation. Does not require a body.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully confirmed"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Not your reservation"),
+            @ApiResponse(responseCode = "404", description = "Reservation not found"),
+            @ApiResponse(responseCode = "409", description = "Conflict - Not in held status")
+    })
     @PostMapping("/reservations/{id}/confirm")
     public ResponseEntity<ReservationResponse> confirmReservation(
             @PathVariable("id") UUID reservationId,
