@@ -4,15 +4,15 @@ A highly concurrent, linearly scalable seat booking API designed to prevent race
 
 ---
 
-## 1. Installation & Setup (One-Shot)
+## 1. Local Setup & Execution (One-Shot)
 
-The entire stack (APIs, PostgreSQL, Redis, Kafka, Consumer, HAProxy, Prometheus, Grafana) can be spun up with a single command. 
+The entire stack (APIs, PostgreSQL, Redis, Kafka, Consumer, HAProxy, Prometheus, Grafana, Dozzle) can be spun up with a single command. The infrastructure strictly manages startup ordering so there are no race conditions during initialization.
 
 **Prerequisites:**
-- Java 21 & Gradle 8.14.3 (for building the JARs)
+- Java 21 & Gradle 8.14.3
 - Docker & Docker Compose
 
-**Build & Run:**
+**Step-by-Step Setup:**
 ```bash
 # 1. Build the Java JARs
 ./gradlew clean build -x test
@@ -22,10 +22,10 @@ docker compose up -d --build
 ```
 
 **What happens on `docker compose up`?**
-- **Infrastructure Boots**: Postgres, Redis, and Kafka start up.
-- **Init Scripts Run**: `init-db` runs Flyway SQL migrations. `init-kafka` creates the `reservations` and `seat-expirations` topics.
-- **Services Boot**: `api` (scaled to 2 replicas by default) and `consumer` start up.
-- **Routing**: HAProxy dynamically discovers the `api` replicas and load-balances traffic across them.
+1. **Infrastructure Boots**: Postgres, Redis, and Kafka start up.
+2. **Init Scripts Run**: `init-db` runs Flyway SQL migrations. `init-kafka` creates the exactly required `reservations` and `seat-expirations` topics.
+3. **Services Boot**: The Spring Boot `api` nodes and `consumer` wait until init scripts succeed, then they start.
+4. **Routing & Metrics**: HAProxy dynamically routes to API replicas. Prometheus and Grafana begin scraping.
 
 ---
 
@@ -36,24 +36,37 @@ Once the stack is healthy, you can access the following services:
 | Service | URL | Credentials (if any) |
 |---------|-----|----------------------|
 | **API Entrypoint (HAProxy)** | `http://localhost:8080` | N/A |
+| **Dozzle (Real-time Logs)** | [http://localhost:8081](http://localhost:8081) | N/A |
 | **Grafana Dashboard** | [http://localhost:3000](http://localhost:3000/d/seat-booking-burst/seat-booking-burst-dashboard) | `admin` / `admin` |
 | **Prometheus Metrics** | [http://localhost:9090](http://localhost:9090) | N/A |
 | **HAProxy Stats** | `http://localhost:8404/stats` | N/A |
 
-*Note: You can scale the API to any number of nodes dynamically! HAProxy and Prometheus will auto-discover them.*
+*Note: You can easily scale the API to handle more load. HAProxy will auto-discover the new nodes:*
 ```bash
 docker compose up -d --scale api=5
 ```
 
 ---
 
-## ⚡ 3. Performing API Actions
+## 💥 3. Running the Burst Test
+
+To simulate an on-sale stampede (e.g. 20,000 requests hitting the API concurrently), run the provided `burst.sh` script:
+
+```bash
+chmod +x burst.sh
+./burst.sh http://localhost:8080
+```
+*Open the **Grafana Dashboard** and **Dozzle Logs** while running this script to watch the system elegantly handle the massive concurrency, instantly reject conflicts via Redis Lua, and process Kafka events without a single double-sell!*
+
+---
+
+## ⚡ 4. Performing API Actions
 
 All API requests should be sent to the HAProxy load balancer at `http://localhost:8080`.
 
 ### A. Health & Liveness
 ```bash
-curl http://localhost:8080/health/ready
+curl http://localhost:8080/health/live
 ```
 
 ### B. Register a User
@@ -62,10 +75,10 @@ Create a user to get an authentication token.
 curl -X POST http://localhost:8080/users/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "sidhesh.vaity@gmail.com"
+    "email": "user@example.com"
   }'
 ```
-*Returns `user_id` and the `token`. Keep the token!*
+*Returns `userId` and `token`. Keep the token!*
 
 ### C. Create a Show (Admin Only)
 *Requires the Admin Token.*
@@ -75,48 +88,51 @@ curl -X POST http://localhost:8080/shows \
   -H "Authorization: Bearer super-secret-admin-token" \
   -d '{
     "name": "Avengers: Secret Wars",
-    "totalSeats": 100,
-    "price": 25000,
-    "perUserLimit": 4
+    "seats": ["A1", "A2", "A3", "B1", "B2", "B3"],
+    "price": 25000
   }'
 ```
-*Returns the created show with an ID and every seat in the "available" state.*
+*Returns the created show with a `showId` and the generated seat map.*
 
-### D. Show State (Seat Map & Counts)
+### D. Get Show State (Seat Map)
 ```bash
 curl http://localhost:8080/shows/<SHOW_ID>
 ```
-*Returns per-seat status (available / held / confirmed) and counts.*
+*Returns per-seat status (available / held / confirmed) and active counts.*
 
-### E. Reserve Seats (Authenticated User)
-Reserve seats atomically using an Idempotency-Key. The user identity comes entirely from the Authorization token!
+### E. Reserve Seats
+Reserve seats atomically. The `userId` in the body must match the owner of the provided token.
 ```bash
 curl -X POST http://localhost:8080/shows/<SHOW_ID>/reserve \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <USER_TOKEN>" \
   -d '{
+    "userId": "<USER_ID>",
     "seats": ["A1", "A2"],
     "idempotencyKey": "<UNIQUE_UUID>"
   }'
 ```
-*Behavior guarantees: No double-sell (409 on conflict), respects per-user limits, perfectly idempotent, and all-or-nothing partial requests.*
+*Behavior guarantees: No double-sell (409 on conflict), 15-second TTL enforced by Redis, and perfectly idempotent.*
 
-### F. Cancel / Release Reservation
+### F. Confirm Reservation
+Confirm a held reservation (must be the owner).
+```bash
+curl -X POST http://localhost:8080/reservations/<RESERVATION_ID>/confirm \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <USER_TOKEN>" \
+  -d '{
+    "userId": "<USER_ID>"
+  }'
+```
+
+### G. Cancel / Release Reservation
 Cancel a reservation (must be the owner).
 ```bash
 curl -X POST http://localhost:8080/reservations/<RESERVATION_ID>/cancel \
-  -H "Authorization: Bearer <USER_TOKEN>"
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <USER_TOKEN>" \
+  -d '{
+    "userId": "<USER_ID>"
+  }'
 ```
 *A released seat instantly becomes cleanly re-bookable by anyone else.*
-
----
-
-## 💥 5. Running the Burst Test
-
-To simulate an on-sale stampede (5,000 requests hitting the API concurrently for 100 seats), run the provided `burst.sh` script:
-
-```bash
-chmod +x burst.sh
-./burst.sh http://localhost:8080
-```
-*Open the **Grafana Dashboard** while running this script to watch the system elegantly handle the load, reject conflicts, and avoid double-sells in real time!*
