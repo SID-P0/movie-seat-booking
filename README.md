@@ -4,12 +4,12 @@ A highly concurrent, linearly scalable seat booking API designed to prevent race
 
 ---
 
-## 🚀 1. Installation & Setup (One-Shot)
+## 1. Installation & Setup (One-Shot)
 
 The entire stack (APIs, PostgreSQL, Redis, Kafka, Consumer, HAProxy, Prometheus, Grafana) can be spun up with a single command. 
 
 **Prerequisites:**
-- Java 21 & Gradle (for building the JARs)
+- Java 21 & Gradle 8.14.3 (for building the JARs)
 - Docker & Docker Compose
 
 **Build & Run:**
@@ -23,7 +23,7 @@ docker compose up -d --build
 
 **What happens on `docker compose up`?**
 - **Infrastructure Boots**: Postgres, Redis, and Kafka start up.
-- **Init Scripts Run**: `init-db` runs Flyway SQL migrations. `init-kafka` creates the `seat-reservations` topic.
+- **Init Scripts Run**: `init-db` runs Flyway SQL migrations. `init-kafka` creates the `reservations` and `seat-expirations` topics.
 - **Services Boot**: `api` (scaled to 2 replicas by default) and `consumer` start up.
 - **Routing**: HAProxy dynamically discovers the `api` replicas and load-balances traffic across them.
 
