@@ -43,17 +43,17 @@ docker compose up -d --build
 
 ## 📊 2. Ports & Monitoring Links
 
+A live service is now available at: http://34.14.203.181/
+
 Once the stack is healthy, you can access the following services:
 
-| Service                      | URL                                                                                                              | Credentials (if any) |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------- |
-| **UI (Nginx)**               | [http://34.14.203.181](http://34.14.203.181)                                                                     | N/A                  |
-| **API Entrypoint (HAProxy)** | [http://34.14.203.181:8080](http://34.14.203.181:8080)                                                           | N/A                  |
-| **Swagger UI**               | [http://34.14.203.181:8080/swagger-ui/index.html](http://34.14.203.181:8080/swagger-ui/index.html)               | N/A                  |
-| **Dozzle (Real-time Logs)**  | [http://34.14.203.181:8081](http://34.14.203.181:8081)                                                           | N/A                  |
-| **Grafana Dashboard**        | [http://34.14.203.181:3000](http://34.14.203.181:3000/d/seat-booking-burst/seat-booking-burst-dashboard)         | `admin` / `admin`    |
-| **Prometheus Metrics**       | [http://34.14.203.181:9090](http://34.14.203.181:9090)                                                           | N/A                  |
-| **HAProxy Stats**            | [http://34.14.203.181:8404/stats](http://34.14.203.181:8404/stats)                                               | N/A                  |
+| Service                      | URL                                                                                              | Credentials (if any) |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ | -------------------- |
+| **API Entrypoint (HAProxy)** | `http://localhost:8080`                                                                          | N/A                  |
+| **Dozzle (Real-time Logs)**  | [http://localhost:8081](http://localhost:8081)                                                   | N/A                  |
+| **Grafana Dashboard**        | [http://localhost:3000](http://localhost:3000/d/seat-booking-burst/seat-booking-burst-dashboard) | `admin` / `admin`    |
+| **Prometheus Metrics**       | [http://localhost:9090](http://localhost:9090)                                                   | N/A                  |
+| **HAProxy Stats**            | `http://localhost:8404/stats`                                                                    | N/A                  |
 
 _Note: You can easily scale the API to handle more load. HAProxy will auto-discover the new nodes:_
 
