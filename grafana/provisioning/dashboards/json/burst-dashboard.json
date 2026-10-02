@@ -1,0 +1,192 @@
+{
+  "id": null,
+  "uid": "seat-booking-burst",
+  "title": "Seat Booking - Burst Dashboard",
+  "timezone": "browser",
+  "refresh": "5s",
+  "panels": [
+    {
+      "title": "Reservations - Confirmed vs Declined (Rate)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "rate(reservations_total{status=\"confirmed\"}[1m])",
+          "legendFormat": "Confirmed"
+        },
+        {
+          "expr": "rate(reservations_total{status=\"declined\", decline_reason=\"seat_taken\"}[1m])",
+          "legendFormat": "Declined - Seat Taken"
+        },
+        {
+          "expr": "rate(reservations_total{status=\"declined\", decline_reason=\"user_limit\"}[1m])",
+          "legendFormat": "Declined - User Limit"
+        },
+        {
+          "expr": "rate(reservations_total{status=\"declined\", decline_reason=\"idempotent_replay\"}[1m])",
+          "legendFormat": "Declined - Idempotent"
+        }
+      ]
+    },
+    {
+      "title": "HTTP Request Rate by Status",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "title": "Seats Available (Gauge)",
+      "type": "gauge",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "seats_available",
+          "legendFormat": "{{show_id}}"
+        }
+      ]
+    },
+    {
+      "title": "Seats Confirmed (Gauge)",
+      "type": "gauge",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "seats_confirmed",
+          "legendFormat": "{{show_id}}"
+        }
+      ]
+    },
+    {
+      "title": "Redis Lua Script Duration (p95)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(redis_lua_duration_seconds_bucket[1m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(redis_lua_duration_seconds_bucket[1m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "title": "API Latency (p50/p95/p99)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, rate(http_server_requests_seconds_bucket{uri=~\"/shows/.*/reserve\"}[1m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=~\"/shows/.*/reserve\"}[1m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{uri=~\"/shows/.*/reserve\"}[1m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "title": "Kafka Producer Failures",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 14
+      },
+      "targets": [
+        {
+          "expr": "kafka_produce_failures_total",
+          "legendFormat": "Failures"
+        }
+      ]
+    },
+    {
+      "title": "Kafka Consumer Events Processed",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 14
+      },
+      "targets": [
+        {
+          "expr": "kafka_consumer_events_total",
+          "legendFormat": "Processed"
+        }
+      ]
+    },
+    {
+      "title": "Seats Expired by Sweeper",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 18
+      },
+      "targets": [
+        {
+          "expr": "seats_expired_total",
+          "legendFormat": "Expired"
+        }
+    },
+    {
+      "title": "Burst Tests Triggered",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 18
+      },
+      "targets": [
+        {
+          "expr": "burst_test_started_total",
+          "legendFormat": "Bursts"
+        }
+      ]
+    }
+  ]
+}

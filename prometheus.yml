@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'seat-booking-api'
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names:
+          - 'api'
+        type: 'A'
+        port: 8080
+
+  - job_name: 'seat-booking-consumer'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['consumer:8090']
+        labels:
+          instance: 'consumer'

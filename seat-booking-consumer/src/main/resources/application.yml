@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: seat-booking-consumer
+
+  # PostgreSQL (same DB as the API)
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:seatbooking}
+    username: ${DB_USER:app}
+    password: ${DB_PASSWORD:apppassword}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 3
+
+  # JPA
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+
+  # Flyway disabled — API module owns migrations
+  flyway:
+    enabled: false
+
+  # Redis
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  # Kafka consumer config
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: seat-booking-consumer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.seatbooking.common.event
+        spring.json.value.default.type: com.seatbooking.common.event.ReservationEvent
+    listener:
+      ack-mode: RECORD
+      concurrency: 3
+
+# Server (for actuator/metrics only)
+server:
+  port: ${SERVER_PORT:8090}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  metrics:
+    tags:
+      application: seat-booking-consumer
+
+app:
+  hold-ttl-seconds: ${HOLD_TTL_SECONDS:15}

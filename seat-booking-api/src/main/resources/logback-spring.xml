@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>requestId</includeMdcKeyName>
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <version>[ignore]</version>
+            </fieldNames>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+    <!-- Quieten noisy libraries under load -->
+    <logger name="org.apache.kafka" level="WARN" />
+    <logger name="org.hibernate.SQL" level="WARN" />
+    <logger name="io.lettuce.core" level="WARN" />
+    <logger name="org.springframework.data.redis" level="WARN" />
+
+    <!-- Our app at INFO -->
+    <logger name="com.seatbooking" level="INFO" />
+</configuration>
