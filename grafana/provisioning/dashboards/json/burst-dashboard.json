@@ -4,185 +4,237 @@
   "title": "Seat Booking - Burst Dashboard",
   "timezone": "browser",
   "refresh": "5s",
+  "schemaVersion": 38,
   "panels": [
     {
+      "id": 1,
+      "title": "HTTP Requests by Status Code (2xx / 4xx / 5xx)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"2..\"}[1m]))",
+          "legendFormat": "2xx Success"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\"}[1m]))",
+          "legendFormat": "4xx Client Error"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx Server Error"
+        }
+      ]
+    },
+    {
+      "id": 2,
       "title": "Reservations - Confirmed vs Declined (Rate)",
       "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "rate(reservations_total{status=\"confirmed\"}[1m])",
+          "legendFormat": "✅ Confirmed"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(reservations_total{status=\"declined\",decline_reason=\"seat_taken\"}[1m])",
+          "legendFormat": "❌ Seat Taken (409)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(reservations_total{status=\"declined\",decline_reason=\"user_limit\"}[1m])",
+          "legendFormat": "⚠️ User Limit (409)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(reservations_total{status=\"declined\",decline_reason=\"idempotent_replay\"}[1m])",
+          "legendFormat": "♻️ Idempotent Replay"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Total Confirmed Reservations",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 8 },
+      "options": { "colorMode": "background", "graphMode": "area" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(reservations_total{status=\"confirmed\"})",
           "legendFormat": "Confirmed"
-        },
-        {
-          "expr": "rate(reservations_total{status=\"declined\", decline_reason=\"seat_taken\"}[1m])",
-          "legendFormat": "Declined - Seat Taken"
-        },
-        {
-          "expr": "rate(reservations_total{status=\"declined\", decline_reason=\"user_limit\"}[1m])",
-          "legendFormat": "Declined - User Limit"
-        },
-        {
-          "expr": "rate(reservations_total{status=\"declined\", decline_reason=\"idempotent_replay\"}[1m])",
-          "legendFormat": "Declined - Idempotent"
         }
       ]
     },
     {
-      "title": "HTTP Request Rate by Status",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
+      "id": 4,
+      "title": "Total Declined (Seat Taken)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 8 },
+      "options": { "colorMode": "background", "graphMode": "area" },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (status)",
-          "legendFormat": "{{status}}"
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(reservations_total{status=\"declined\",decline_reason=\"seat_taken\"})",
+          "legendFormat": "Seat Taken"
         }
       ]
     },
     {
-      "title": "Seats Available (Gauge)",
+      "id": 5,
+      "title": "Total 5xx Errors",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "red", "value": 1 }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(http_server_requests_seconds_count{status=~\"5..\"})",
+          "legendFormat": "5xx Errors"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Seats Available",
       "type": "gauge",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 8
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "seats_available",
           "legendFormat": "{{show_id}}"
         }
       ]
     },
     {
-      "title": "Seats Confirmed (Gauge)",
+      "id": 7,
+      "title": "Seats Confirmed",
       "type": "gauge",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 6,
-        "y": 8
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "seats_confirmed",
           "legendFormat": "{{show_id}}"
         }
       ]
     },
     {
-      "title": "Redis Lua Script Duration (p95)",
+      "id": 8,
+      "title": "API Latency /reserve (p50 / p95 / p99)",
       "type": "timeseries",
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(redis_lua_duration_seconds_bucket[1m]))",
-          "legendFormat": "p95"
-        },
-        {
-          "expr": "histogram_quantile(0.99, rate(redis_lua_duration_seconds_bucket[1m]))",
-          "legendFormat": "p99"
-        }
-      ]
-    },
-    {
-      "title": "API Latency (p50/p95/p99)",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 14
-      },
-      "targets": [
-        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "histogram_quantile(0.5, rate(http_server_requests_seconds_bucket{uri=~\"/shows/.*/reserve\"}[1m]))",
           "legendFormat": "p50"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=~\"/shows/.*/reserve\"}[1m]))",
           "legendFormat": "p95"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{uri=~\"/shows/.*/reserve\"}[1m]))",
           "legendFormat": "p99"
         }
       ]
     },
     {
-      "title": "Kafka Producer Failures",
-      "type": "stat",
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 14
-      },
+      "id": 9,
+      "title": "Redis Lua Script Duration (p95 / p99)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
       "targets": [
         {
-          "expr": "kafka_produce_failures_total",
-          "legendFormat": "Failures"
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, rate(redis_lua_duration_seconds_bucket[1m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, rate(redis_lua_duration_seconds_bucket[1m]))",
+          "legendFormat": "p99"
         }
       ]
     },
     {
+      "id": 10,
       "title": "Kafka Consumer Events Processed",
       "type": "stat",
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 14
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 22 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "kafka_consumer_events_total",
           "legendFormat": "Processed"
         }
       ]
     },
     {
-      "title": "Seats Expired by Sweeper",
+      "id": 11,
+      "title": "Kafka Producer Failures",
       "type": "stat",
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 18
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 22 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "kafka_produce_failures_total",
+          "legendFormat": "Failures"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Seats Expired by Sweeper",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 22 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "seats_expired_total",
           "legendFormat": "Expired"
         }
+      ]
     },
     {
+      "id": 13,
       "title": "Burst Tests Triggered",
       "type": "stat",
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 18
-      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 22 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "burst_test_started_total",
           "legendFormat": "Bursts"
         }
