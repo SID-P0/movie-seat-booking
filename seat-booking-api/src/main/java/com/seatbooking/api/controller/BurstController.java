@@ -88,7 +88,7 @@ public class BurstController {
                             String seat = row + "" + num;
                             String idempotencyKey = UUID.randomUUID().toString();
 
-                            String payload = String.format("{\"userId\":\"%s\",\"seats\":[\"%s\"],\"idempotencyKey\":\"%s\"}", userId, seat, idempotencyKey);
+                            String payload = String.format("{\"seats\":[\"%s\"],\"idempotencyKey\":\"%s\"}", seat, idempotencyKey);
 
                             HttpRequest request = HttpRequest.newBuilder()
                                     .uri(URI.create("http://localhost:8080/shows/" + showId + "/reserve"))

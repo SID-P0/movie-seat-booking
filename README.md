@@ -4,7 +4,7 @@ A highly concurrent, linearly scalable seat booking API designed to prevent race
 
 ---
 
-## 1. Local Setup & Execution (One-Shot)
+## 1. Local Setup & Execution
 
 The entire stack (APIs, PostgreSQL, Redis, Kafka, Consumer, HAProxy, Prometheus, Grafana, Dozzle) can be spun up with a single command. The infrastructure strictly manages startup ordering so there are no race conditions during initialization.
 
@@ -101,13 +101,12 @@ curl http://localhost:8080/shows/<SHOW_ID>
 *Returns per-seat status (available / held / confirmed) and active counts.*
 
 ### E. Reserve Seats
-Reserve seats atomically. The `userId` in the body must match the owner of the provided token.
+Reserve seats atomically. The identity comes purely from the provided authentication token.
 ```bash
 curl -X POST http://localhost:8080/shows/<SHOW_ID>/reserve \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <USER_TOKEN>" \
   -d '{
-    "userId": "<USER_ID>",
     "seats": ["A1", "A2"],
     "idempotencyKey": "<UNIQUE_UUID>"
   }'
@@ -118,21 +117,13 @@ curl -X POST http://localhost:8080/shows/<SHOW_ID>/reserve \
 Confirm a held reservation (must be the owner).
 ```bash
 curl -X POST http://localhost:8080/reservations/<RESERVATION_ID>/confirm \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <USER_TOKEN>" \
-  -d '{
-    "userId": "<USER_ID>"
-  }'
+  -H "Authorization: Bearer <USER_TOKEN>"
 ```
 
 ### G. Cancel / Release Reservation
 Cancel a reservation (must be the owner).
 ```bash
 curl -X POST http://localhost:8080/reservations/<RESERVATION_ID>/cancel \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <USER_TOKEN>" \
-  -d '{
-    "userId": "<USER_ID>"
-  }'
+  -H "Authorization: Bearer <USER_TOKEN>"
 ```
 *A released seat instantly becomes cleanly re-bookable by anyone else.*

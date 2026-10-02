@@ -36,10 +36,6 @@ public class ReservationController {
 
         UserEntity user = getAuthenticatedUser(httpRequest);
 
-        if (!user.getUserId().toString().equals(request.getUserId())) {
-            throw new com.seatbooking.api.exception.ForbiddenException("User ID mismatch");
-        }
-
         ReservationResponse response = reservationService.reserveSeats(user, showId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -50,14 +46,9 @@ public class ReservationController {
     @PostMapping("/reservations/{id}/cancel")
     public ResponseEntity<ReservationResponse> cancelReservation(
             @PathVariable("id") UUID reservationId,
-            @Valid @RequestBody CancelReservationRequest request,
             HttpServletRequest httpRequest) {
 
         UserEntity user = getAuthenticatedUser(httpRequest);
-
-        if (!user.getUserId().toString().equals(request.getUserId())) {
-            throw new com.seatbooking.api.exception.ForbiddenException("User ID mismatch");
-        }
 
         ReservationResponse response = reservationService.cancelReservation(user, reservationId);
         return ResponseEntity.ok(response);
@@ -69,14 +60,9 @@ public class ReservationController {
     @PostMapping("/reservations/{id}/confirm")
     public ResponseEntity<ReservationResponse> confirmReservation(
             @PathVariable("id") UUID reservationId,
-            @Valid @RequestBody ConfirmReservationRequest request,
             HttpServletRequest httpRequest) {
 
         UserEntity user = getAuthenticatedUser(httpRequest);
-
-        if (!user.getUserId().toString().equals(request.getUserId())) {
-            throw new com.seatbooking.api.exception.ForbiddenException("User ID mismatch");
-        }
 
         ReservationResponse response = reservationService.confirmReservation(user, reservationId);
         return ResponseEntity.ok(response);
