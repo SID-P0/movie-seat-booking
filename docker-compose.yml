@@ -180,9 +180,12 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run --token <YOUR_CLOUDFLARE_TUNNEL_TOKEN>
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend-build:/usr/share/nginx/html:ro
     depends_on:
       - haproxy
 
