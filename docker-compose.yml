@@ -59,7 +59,8 @@ services:
     command: |
       "
       # Create kafka topics
-      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic seat-reservations --partitions 6 --replication-factor 1
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic reservations --partitions 6 --replication-factor 1
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic seat-expirations --partitions 6 --replication-factor 1
       echo -e 'Successfully created the following topics:'
       /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
       "
