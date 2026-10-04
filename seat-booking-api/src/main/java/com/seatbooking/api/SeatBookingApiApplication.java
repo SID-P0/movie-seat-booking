@@ -13,9 +13,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 
 @SpringBootApplication(scanBasePackages = "com.seatbooking")
-@EntityScan(basePackages = "com.seatbooking.common.entity")
-@EnableJpaRepositories(basePackages = "com.seatbooking.api.repository")
-@EnableScheduling
 @OpenAPIDefinition(
         info = @Info(title = "Movie Seat Booking API", version = "v1"),
         security = @SecurityRequirement(name = "bearerAuth")
